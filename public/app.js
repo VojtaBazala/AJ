@@ -141,36 +141,55 @@ async function loadNews() {
   document.getElementById('newsDot').classList.add('active');
 
   try {
-    // fetch weather
-    let weatherText = '';
+    // fetch real energy data + weather in parallel
+    const [energyRes, weatherRes] = await Promise.all([
+      fetch('/api/energy'),
+      fetch('/api/weather')
+    ]);
+    const energy = await energyRes.json();
+    const wdata = await weatherRes.json();
+
+    // format energy context
+    let energyContext = '';
+    if (energy.cz) energyContext += `Czech electricity today: avg ${energy.cz.avg} EUR/MWh, min ${energy.cz.min}, max ${energy.cz.max}. `;
+    if (energy.de) energyContext += `German electricity today: avg ${energy.de.avg} EUR/MWh, min ${energy.de.min}, max ${energy.de.max}. `;
+    if (energy.ttf) energyContext += `TTF natural gas: ${energy.ttf} EUR/MWh. `;
+
+    // format weather context
+    let weatherContext = '';
     try {
-      const wr = await fetch('/api/weather');
-      const wdata = await wr.json();
       if (Array.isArray(wdata) && wdata[0]?.list) {
         const fmt = (d, city) => {
-          const tomorrow = d.list[2];
-          const desc = tomorrow.weather[0].description;
-          const tmin = Math.round(tomorrow.main.temp_min);
-          const tmax = Math.round(tomorrow.main.temp_max);
-          return `${city}: ${desc}, ${tmin}–${tmax}°C`;
+          const t = d.list[2];
+          return `${city}: ${t.weather[0].description}, ${Math.round(t.main.temp_min)}–${Math.round(t.main.temp_max)}°C`;
         };
-        weatherText = `Weather tomorrow — ${fmt(wdata[0],'Prague')}, ${fmt(wdata[1],'Berlin')}`;
+        weatherContext = `Weather tomorrow — ${fmt(wdata[0],'Prague')}, ${fmt(wdata[1],'Berlin')}. `;
       }
     } catch(e) {}
 
     const today = new Date().toLocaleDateString('en-GB');
     const text = await claude(
-      'You are an energy market analyst. Be concise, factual, specific with numbers. Speak naturally — your text will be read aloud.',
-      `Date: ${today}. Give a 150-word spoken briefing on EU energy markets focusing on Czech and German electricity and gas prices, key market drivers, and outlook. ${weatherText ? 'Also include: ' + weatherText : ''} End with the weather summary. Natural spoken English, B2 level.`
+      'You are an energy market analyst. Use ONLY the exact numbers provided — never invent prices. Speak naturally for text-to-speech. Be concise and informative.',
+      `Date: ${today}. Here are today\'s REAL market prices — use these exact numbers:\n${energyContext}${weatherContext}\nGive a 120-word spoken briefing covering: Czech and German electricity prices with context (high/low vs normal ~60-80 EUR/MWh), TTF gas price, key market factors today, and tomorrow\'s weather outlook. Natural English, B2 level.`
     );
 
     btn.disabled = false;
     loader.classList.remove('on');
     document.getElementById('newsDot').classList.remove('active');
 
+    // build price summary cards
+    const czCard = energy.cz ? `CZ avg <b>${energy.cz.avg}</b> EUR/MWh` : 'CZ: n/a';
+    const deCard = energy.de ? `DE avg <b>${energy.de.avg}</b> EUR/MWh` : 'DE: n/a';
+    const ttfCard = energy.ttf ? `TTF <b>${energy.ttf}</b> EUR/MWh` : '';
+
     document.getElementById('newsContent').innerHTML = `
+      <div class="card" style="display:flex;gap:12px;margin-bottom:12px">
+        <div style="flex:1;text-align:center;font-size:13px">${czCard}</div>
+        <div style="flex:1;text-align:center;font-size:13px">${deCard}</div>
+        ${ttfCard ? `<div style="flex:1;text-align:center;font-size:13px">${ttfCard}</div>` : ''}
+      </div>
       <div class="card">
-        <div class="card-label">⚡ Markets · ${today}</div>
+        <div class="card-label">⚡ Briefing · ${today}</div>
         <div class="card-text" id="newsText">${text.replace(/\n/g,'<br>')}</div>
       </div>
       <div class="row">
@@ -182,8 +201,6 @@ async function loadNews() {
         </button>
       </div>
     `;
-
-    // auto-read
     speak(text);
 
   } catch(e) {
