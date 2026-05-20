@@ -9,9 +9,9 @@ const PORT = process.env.PORT || 3000;
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 const WEATHER_KEY = process.env.OPENWEATHER_API_KEY;
 
-// ── Anthropic proxy ──────────────────────────────────────
 app.post('/api/claude', async (req, res) => {
   try {
+    console.log('Claude API call, key starts:', ANTHROPIC_KEY ? ANTHROPIC_KEY.substring(0,20) : 'MISSING');
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -26,13 +26,14 @@ app.post('/api/claude', async (req, res) => {
       })
     });
     const data = await response.json();
+    console.log('Claude API response type:', data.type, 'error:', data.error);
     res.json(data);
   } catch (e) {
+    console.error('Claude API error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
 
-// ── Weather proxy ────────────────────────────────────────
 app.get('/api/weather', async (req, res) => {
   try {
     const cities = ['Prague,CZ', 'Berlin,DE'];
