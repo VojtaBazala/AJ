@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>AJ Trainer</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+</head>
+<body>
+
+<!-- ── HOME ── -->
+<div class="screen active" id="home">
+  <div class="logo">AJ</div>
+  <div class="tagline">hands-free english trainer</div>
+  <div class="mode-grid">
+    <div class="mode-btn green" onclick="go('news')">
+      <div class="icon">⚡</div>
+      <div class="label">Energy<br>News</div>
+    </div>
+    <div class="mode-btn blue" onclick="go('pron')">
+      <div class="icon">🗣</div>
+      <div class="label">Pronun-<br>ciation</div>
+    </div>
+    <div class="mode-btn yellow" onclick="go('vocab')">
+      <div class="icon">📝</div>
+      <div class="label">Vocab<br>Quiz</div>
+    </div>
+    <div class="mode-btn red" onclick="go('talk')">
+      <div class="icon">💬</div>
+      <div class="label">Small<br>Talk</div>
+    </div>
+  </div>
+  <!-- always-on voice command ring -->
+  <div style="margin-top:40px;font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;line-height:2">
+    Say: "news" · "pronunciation" · "vocab" · "small talk"
+  </div>
+  <div style="margin-top:16px">
+    <button class="voice-btn red" onclick="toggleAlwaysOn()" id="aoBtn">
+      <i class="ti ti-microphone"></i> Enable Always-On Voice
+    </button>
+  </div>
+</div>
+
+<!-- ── NEWS ── -->
+<div class="screen" id="news">
+  <div class="top-bar">
+    <div class="back-btn" onclick="go('home')">←</div>
+    <div class="screen-title">⚡ Energy News</div>
+    <div class="status-dot" id="newsDot"></div>
+  </div>
+  <div class="scroll-body">
+    <button class="voice-btn green" onclick="loadNews()" id="newsBtn">
+      <i class="ti ti-refresh"></i> Load & Read News
+    </button>
+    <div class="loader" id="newsLoader"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Fetching market data...</span></div>
+    <div id="newsContent"></div>
+  </div>
+</div>
+
+<!-- ── PRONUNCIATION ── -->
+<div class="screen" id="pron">
+  <div class="top-bar">
+    <div class="back-btn" onclick="go('home')">←</div>
+    <div class="screen-title">🗣 Pronunciation</div>
+    <div class="status-dot" id="pronDot"></div>
+  </div>
+  <div class="scroll-body">
+    <div class="prog-wrap"><div class="prog-fill" id="pronProg" style="width:0%"></div></div>
+    <div class="score-bar"><span>Score</span><span class="score-num" id="pronScore">0 / 0</span></div>
+    <div style="height:16px"></div>
+    <div class="sentence-big" id="sentText">Press Start to begin</div>
+    <div class="wave-wrap" id="pronWave">
+      <div class="wave"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+      <div class="wave-label">Listening... repeat the sentence</div>
+    </div>
+    <div class="feedback" id="pronFb"></div>
+    <div class="row">
+      <button class="sm-btn" onclick="playSent()"><i class="ti ti-volume"></i> Replay</button>
+      <button class="sm-btn p" onclick="startPron()" id="pronStartBtn"><i class="ti ti-player-play"></i> Start</button>
+    </div>
+    <button class="voice-btn blue" onclick="listenPron()" id="pronListenBtn" style="display:none">
+      <i class="ti ti-microphone"></i> Repeat Now
+    </button>
+  </div>
+</div>
+
+<!-- ── VOCAB ── -->
+<div class="screen" id="vocab">
+  <div class="top-bar">
+    <div class="back-btn" onclick="go('home')">←</div>
+    <div class="screen-title">📝 Vocab Quiz</div>
+    <div class="status-dot" id="vocabDot"></div>
+  </div>
+  <div class="scroll-body">
+    <div class="prog-wrap"><div class="prog-fill" id="vocabProg" style="width:0%"></div></div>
+    <div class="score-bar"><span>Score</span><span class="score-num" id="vocabScoreEl">0 / 0</span></div>
+    <div style="height:16px"></div>
+    <div class="vocab-big" id="vocabWord">—<div class="vocab-sub">say in English</div></div>
+    <div class="wave-wrap" id="vocabWave">
+      <div class="wave"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+      <div class="wave-label">Listening...</div>
+    </div>
+    <div class="feedback" id="vocabFb"></div>
+    <div class="row">
+      <button class="sm-btn" onclick="startVocab()"><i class="ti ti-refresh"></i> New Test</button>
+      <button class="sm-btn p" onclick="listenVocab()" id="vocabListenBtn"><i class="ti ti-microphone"></i> Answer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SMALL TALK ── -->
+<div class="screen" id="talk">
+  <div class="top-bar">
+    <div class="back-btn" onclick="go('home')">←</div>
+    <div class="screen-title">💬 Small Talk</div>
+    <div class="status-dot" id="talkDot"></div>
+  </div>
+  <div class="scroll-body">
+    <button class="voice-btn red" onclick="startTalk()" id="talkStartBtn">
+      <i class="ti ti-messages"></i> Start Conversation
+    </button>
+    <div class="loader" id="talkLoader"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>AI is thinking...</span></div>
+    <div class="chat-wrap" id="chatWrap"></div>
+    <div class="wave-wrap" id="talkWave">
+      <div class="wave"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+      <div class="wave-label">Your turn — speak English</div>
+    </div>
+    <div class="feedback" id="talkFb"></div>
+    <div class="row" id="talkBtns" style="display:none">
+      <button class="sm-btn" onclick="replayTalk()"><i class="ti ti-volume"></i> Replay</button>
+      <button class="sm-btn p" onclick="listenTalk()"><i class="ti ti-microphone"></i> Reply</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
